@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Соцсети{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">Где меня найти</div>
+  <h1>Соцсети</h1>
+</div>
+
+<div class="social-grid">
+  {% if settings.instagram %}
+  <a class="social-card panel" href="{{ settings.instagram }}" target="_blank" rel="noopener">
+    <div class="social-icon">IG</div>
+    <div>
+      <div class="social-name">Instagram</div>
+      <div class="social-handle">открыть профиль ↗</div>
+    </div>
+  </a>
+  {% endif %}
+  {% if settings.tiktok %}
+  <a class="social-card panel" href="{{ settings.tiktok }}" target="_blank" rel="noopener">
+    <div class="social-icon">TT</div>
+    <div>
+      <div class="social-name">TikTok</div>
+      <div class="social-handle">открыть профиль ↗</div>
+    </div>
+  </a>
+  {% endif %}
+  {% if settings.youtube %}
+  <a class="social-card panel" href="{{ settings.youtube }}" target="_blank" rel="noopener">
+    <div class="social-icon">YT</div>
+    <div>
+      <div class="social-name">YouTube</div>
+      <div class="social-handle">открыть канал ↗</div>
+    </div>
+  </a>
+  {% endif %}
+  {% if settings.telegram %}
+  <a class="social-card panel" href="{{ settings.telegram }}" target="_blank" rel="noopener">
+    <div class="social-icon">TG</div>
+    <div>
+      <div class="social-name">Telegram</div>
+      <div class="social-handle">открыть чат ↗</div>
+    </div>
+  </a>
+  {% endif %}
+</div>
+
+{% if not (settings.instagram or settings.tiktok or settings.youtube or settings.telegram) %}
+<div class="panel empty-hint">Ссылки ещё не заполнены — добавь их в «Настройках».</div>
+{% endif %}
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Ссылки</span></div>
+  <div class="field">
+    <label class="field-label">Instagram</label>
+    <input type="url" id="s-instagram" value="{{ settings.instagram }}" style="width:100%;">
+  </div>
+  <div class="field">
+    <label class="field-label">TikTok</label>
+    <input type="url" id="s-tiktok" value="{{ settings.tiktok }}" style="width:100%;">
+  </div>
+  <div class="field">
+    <label class="field-label">YouTube</label>
+    <input type="url" id="s-youtube" value="{{ settings.youtube }}" style="width:100%;">
+  </div>
+  <div class="field">
+    <label class="field-label">Telegram</label>
+    <input type="url" id="s-telegram" value="{{ settings.telegram }}" style="width:100%;">
+  </div>
+  <button class="btn btn-accent" onclick="saveSocials()">Сохранить</button>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveSocials() {
+  await api("/api/settings", "POST", {
+    instagram: document.getElementById("s-instagram").value.trim(),
+    tiktok: document.getElementById("s-tiktok").value.trim(),
+    youtube: document.getElementById("s-youtube").value.trim(),
+    telegram: document.getElementById("s-telegram").value.trim(),
+  });
+  showToast("Сохранено");
+  setTimeout(() => location.reload(), 500);
+}
+</script>
+{% endblock %}

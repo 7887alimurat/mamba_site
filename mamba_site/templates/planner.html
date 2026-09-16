@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}План на день{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">Ежедневный план</div>
+  <h1>{{ date }}</h1>
+</div>
+
+<div class="panel">
+  <div class="form-row" style="margin-bottom:18px;">
+    <input type="date" id="date-picker" value="{{ date }}" onchange="location.href='{{ url_for('page_planner') }}?date=' + this.value">
+  </div>
+
+  <div id="plan-list">
+    {% for p in plans %}
+    <div class="plan-row {{ 'is-done' if p.done }}" data-id="{{ p.id }}">
+      <div class="plan-time">{{ p.time_start }}–{{ p.time_end }}</div>
+      <div class="plan-desc">{{ p.description }}</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="checkbox {{ 'is-checked' if p.done }}" onclick="togglePlan({{ p.id }}, this)"></div>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not plans %}
+    <div class="empty-hint">На этот день ещё ничего не добавлено.</div>
+    {% endif %}
+  </div>
+
+  <div class="form-row" style="margin-top:18px; border-top:1px solid var(--panel-border); padding-top:18px;">
+    <input type="time" id="p-start" required>
+    <input type="time" id="p-end" required>
+    <input type="text" id="p-desc" placeholder="Что нужно сделать" style="min-width:260px; flex:1;">
+    <button class="btn btn-accent" onclick="addPlan()">Добавить</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CURRENT_DATE = "{{ date }}";
+
+async function addPlan() {
+  const start = document.getElementById("p-start").value;
+  const end = document.getElementById("p-end").value;
+  const desc = document.getElementById("p-desc").value.trim();
+  if (!start || !end || !desc) return showToast("Заполни время и описание");
+  await api("/api/planner", "POST", {
+    date: CURRENT_DATE, time_start: start, time_end: end, description: desc,
+  });
+  location.reload();
+}
+
+async function togglePlan(id, el) {
+  const done = !el.classList.contains("is-checked");
+  el.classList.toggle("is-checked");
+  el.closest(".plan-row").classList.toggle("is-done", done);
+  await api(`/api/planner/${id}`, "PUT", { done: done ? 1 : 0 });
+}
+</script>
+{% endblock %}

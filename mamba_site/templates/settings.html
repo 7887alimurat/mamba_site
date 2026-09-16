@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Настройки{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">Персонализация</div>
+  <h1>Настройки</h1>
+</div>
+
+<div class="panel">
+  <div class="section-title"><span>Общее</span></div>
+  <div class="field">
+    <label class="field-label">Имя (отображается в приветствии и в шапке)</label>
+    <input type="text" id="s-name" value="{{ settings.user_name }}">
+  </div>
+  <div class="field">
+    <label class="field-label">Текст приветствия</label>
+    <input type="text" id="s-greeting" value="{{ settings.greeting }}">
+  </div>
+  <div class="form-row">
+    <div class="field" style="flex:1;">
+      <label class="field-label">Ссылка на LMS</label>
+      <input type="url" id="s-lms" value="{{ settings.lms_link }}" style="width:100%;">
+    </div>
+    <div class="field" style="flex:1;">
+      <label class="field-label">Ссылка на My-DU</label>
+      <input type="url" id="s-mydu" value="{{ settings.mydu_link }}" style="width:100%;">
+    </div>
+  </div>
+  <button class="btn btn-accent" onclick="saveGeneral()">Сохранить</button>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Акцентный цвет</span></div>
+  <div class="color-swatches" id="swatches">
+    {% for c in ["#3ecf8e", "#5b9dff", "#e2685f", "#d9a53e", "#a06be0", "#3ec7cf"] %}
+    <div class="swatch {{ 'is-selected' if settings.accent == c }}" style="background:{{ c }};" onclick="setAccent('{{ c }}')"></div>
+    {% endfor %}
+    <input type="color" id="s-accent-custom" value="{{ settings.accent }}" onchange="setAccent(this.value)" style="width:32px; height:32px; padding:0; border-radius:999px; cursor:pointer;">
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Обои сайта</span></div>
+  <div class="form-row">
+    <button class="btn {{ 'btn-accent' if settings.background_type == 'color' }}" onclick="setBgType('color')">Однотонный фон</button>
+    <button class="btn" onclick="document.getElementById('file-input').click()">Загрузить фото / GIF / видео</button>
+    <input type="file" id="file-input" accept="image/*,video/mp4,video/webm" style="display:none;" onchange="uploadFile(this.files[0])">
+  </div>
+
+  {% if uploads %}
+  <div class="wallpaper-grid">
+    {% for u in uploads %}
+    <div class="wallpaper-thumb {{ 'is-selected' if settings.background_value == '/static/uploads/' + u }}"
+         style="background-image:url('/static/uploads/{{ u }}');"
+         onclick="selectWallpaper('/static/uploads/{{ u }}', '{{ 'video' if u.endswith(('.mp4','.webm','.mov')) else ('gif' if u.endswith('.gif') else 'image') }}')"
+         title="{{ u }}">
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <p style="color:var(--text-faint); font-size:12.5px; margin-top:14px;">
+    Фон применяется сразу и виден на всех страницах сквозь полупрозрачные панели.
+  </p>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveGeneral() {
+  await api("/api/settings", "POST", {
+    user_name: document.getElementById("s-name").value.trim() || "Mamba",
+    greeting: document.getElementById("s-greeting").value.trim(),
+    lms_link: document.getElementById("s-lms").value.trim(),
+    mydu_link: document.getElementById("s-mydu").value.trim(),
+  });
+  showToast("Сохранено");
+  setTimeout(() => location.reload(), 500);
+}
+
+async function setAccent(color) {
+  await api("/api/settings", "POST", { accent: color });
+  document.documentElement.style.setProperty("--accent", color);
+  showToast("Цвет обновлён");
+  setTimeout(() => location.reload(), 400);
+}
+
+async function setBgType(type) {
+  await api("/api/settings", "POST", { background_type: type, background_value: "" });
+  location.reload();
+}
+
+async function selectWallpaper(path, kind) {
+  await api("/api/settings", "POST", { background_type: kind, background_value: path });
+  location.reload();
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  const form = new FormData();
+  form.append("file", file);
+  showToast("Загружаю...");
+  const res = await fetch("/api/upload", { method: "POST", body: form });
+  const data = await res.json();
+  if (data.error) return showToast(data.error);
+  await api("/api/settings", "POST", { background_type: data.kind, background_value: data.path });
+  location.reload();
+}
+</script>
+{% endblock %}

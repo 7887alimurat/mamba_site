@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">{{ settings.greeting }},</div>
+  <h1>{{ settings.user_name }}</h1>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="section-title">
+      <span>План на сегодня</span>
+      <a href="{{ url_for('page_planner') }}">открыть →</a>
+    </div>
+    {% if plans %}
+      {% for p in plans %}
+      <div class="plan-row {{ 'is-done' if p.done }}">
+        <div class="plan-time">{{ p.time_start }}–{{ p.time_end }}</div>
+        <div class="plan-desc">{{ p.description }}</div>
+        <div></div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-hint">На сегодня пока ничего не запланировано.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="section-title">
+      <span>Ближайшие дедлайны</span>
+      <a href="{{ url_for('page_schedule') }}">все →</a>
+    </div>
+    {% if deadlines %}
+      {% for d in deadlines %}
+      <div class="deadline-row">
+        <div>
+          <div class="deadline-title">{{ d.title }}</div>
+          <div class="deadline-subject">{{ d.subject }}</div>
+        </div>
+        <div class="deadline-countdown" data-countdown="{{ d.deadline }}">—</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-hint">Дедлайнов нет — можно выдохнуть.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title">
+    <span>Пары сегодня</span>
+    <a href="{{ url_for('page_schedule') }}">расписание →</a>
+  </div>
+  {% if today_pairs %}
+    <div class="week-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px,1fr));">
+      {% for p in today_pairs %}
+      <div class="pair-card">
+        <div class="pair-time">{{ p.time_start }}–{{ p.time_end }}</div>
+        <div class="pair-subject">{{ p.subject }}</div>
+        <div class="pair-meta">{{ p.room }}{% if p.teacher %} · {{ p.teacher }}{% endif %}</div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-hint">Сегодня пар нет.</div>
+  {% endif %}
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Медиа</span></div>
+  <div class="media-grid">
+    <div class="media-cell" onclick="document.getElementById('input-photo').click()"
+         style="{{ ('background-image:url(' ~ settings.home_photo ~ ');') if settings.home_photo }}">
+      {% if not settings.home_photo %}<span class="media-cell-label">+ Фото</span>{% endif %}
+    </div>
+    <div class="media-cell" onclick="document.getElementById('input-gif1').click()"
+         style="{{ ('background-image:url(' ~ settings.home_gif_1 ~ ');') if settings.home_gif_1 }}">
+      {% if not settings.home_gif_1 %}<span class="media-cell-label">+ GIF 1</span>{% endif %}
+    </div>
+    <div class="media-cell" onclick="document.getElementById('input-gif2').click()"
+         style="{{ ('background-image:url(' ~ settings.home_gif_2 ~ ');') if settings.home_gif_2 }}">
+      {% if not settings.home_gif_2 %}<span class="media-cell-label">+ GIF 2</span>{% endif %}
+    </div>
+  </div>
+  <input type="file" id="input-photo" accept="image/*" style="display:none;" onchange="uploadHomeMedia(this.files[0], 'home_photo')">
+  <input type="file" id="input-gif1" accept="image/gif" style="display:none;" onchange="uploadHomeMedia(this.files[0], 'home_gif_1')">
+  <input type="file" id="input-gif2" accept="image/gif" style="display:none;" onchange="uploadHomeMedia(this.files[0], 'home_gif_2')">
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title">
+    <span>Портфолио</span>
+    <div style="display:flex; gap:16px; align-items:center;">
+      {% if settings.github_profile %}
+      <a href="{{ settings.github_profile }}" target="_blank" rel="noopener">мой GitHub ↗</a>
+      {% endif %}
+      <a href="{{ url_for('page_portfolio') }}">всё портфолио →</a>
+    </div>
+  </div>
+
+  {% if projects %}
+    <div class="project-grid">
+      {% for pr in projects %}
+      <div class="project-card panel">
+        <h3>{{ pr.title }}</h3>
+        <div class="project-desc">{{ pr.description }}</div>
+        {% if pr.github_link %}
+        <a class="project-link" href="{{ pr.github_link }}" target="_blank" rel="noopener">github ↗</a>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-hint">Добавь первый проект на странице «Портфолио».</div>
+  {% endif %}
+</div>
+
+{% endblock %}

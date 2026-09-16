@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Расписание{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">Учебная неделя</div>
+  <h1>Расписание</h1>
+</div>
+
+<div class="panel">
+  <div class="week-grid">
+    {% for i in range(7) %}
+    <div class="day-col">
+      <h3>{{ weekdays[i] }}</h3>
+      {% for p in by_day[i] %}
+      <div class="pair-card" data-id="{{ p.id }}">
+        <div class="pair-time">{{ p.time_start }}–{{ p.time_end }}</div>
+        <div class="pair-subject">{{ p.subject }}</div>
+        <div class="pair-meta">{{ p.room }}{% if p.teacher %} · {{ p.teacher }}{% endif %}</div>
+        <button class="btn btn-ghost" style="margin-top:6px; padding:2px 6px; font-size:11px;" onclick="deletePair({{ p.id }})">убрать</button>
+      </div>
+      {% endfor %}
+      {% if not by_day[i] %}
+      <div class="empty-hint">пусто</div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="form-row" style="margin-top:22px; border-top:1px solid var(--panel-border); padding-top:18px;">
+    <select id="f-weekday">
+      {% for i in range(7) %}<option value="{{ i }}">{{ weekdays[i] }}</option>{% endfor %}
+    </select>
+    <input type="time" id="f-start" required>
+    <input type="time" id="f-end" required>
+    <input type="text" id="f-subject" placeholder="Предмет" style="min-width:160px;">
+    <input type="text" id="f-room" placeholder="Аудитория" style="width:110px;">
+    <input type="text" id="f-teacher" placeholder="Преподаватель" style="min-width:150px;">
+    <button class="btn btn-accent" onclick="addPair()">Добавить пару</button>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Дедлайны и ассайнменты</span></div>
+
+  <div id="deadline-list">
+    {% for d in deadlines %}
+    <div class="deadline-row" data-id="{{ d.id }}">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="checkbox {{ 'is-checked' if d.done }}" onclick="toggleAssignment({{ d.id }}, this)"></div>
+        <div>
+          <div class="deadline-title" style="{{ 'text-decoration:line-through;color:var(--text-faint);' if d.done }}">{{ d.title }}</div>
+          <div class="deadline-subject">{{ d.subject }}{% if d.link %} · <a href="{{ d.link }}" target="_blank" rel="noopener" style="color:var(--accent);">ссылка</a>{% endif %}</div>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        {% if not d.done %}<div class="deadline-countdown" data-countdown="{{ d.deadline }}">—</div>{% endif %}
+        <button class="btn btn-ghost" onclick="deleteAssignment({{ d.id }})">✕</button>
+      </div>
+    </div>
+    {% endfor %}
+    {% if not deadlines %}
+    <div class="empty-hint">Дедлайнов пока нет.</div>
+    {% endif %}
+  </div>
+
+  <div class="form-row" style="margin-top:18px; border-top:1px solid var(--panel-border); padding-top:18px;">
+    <input type="text" id="a-title" placeholder="Название ассайнмента" style="min-width:200px;">
+    <input type="text" id="a-subject" placeholder="Предмет" style="width:150px;">
+    <input type="datetime-local" id="a-deadline" required>
+    <input type="url" id="a-link" placeholder="Ссылка на LMS (необязательно)" style="min-width:200px;">
+    <button class="btn btn-accent" onclick="addAssignment()">Добавить дедлайн</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addPair() {
+  const subject = document.getElementById("f-subject").value.trim();
+  const start = document.getElementById("f-start").value;
+  const end = document.getElementById("f-end").value;
+  if (!subject || !start || !end) return showToast("Заполни предмет и время");
+  await api("/api/schedule", "POST", {
+    weekday: parseInt(document.getElementById("f-weekday").value, 10),
+    time_start: start,
+    time_end: end,
+    subject,
+    room: document.getElementById("f-room").value.trim(),
+    teacher: document.getElementById("f-teacher").value.trim(),
+  });
+  location.reload();
+}
+async function deletePair(id) {
+  await api(`/api/schedule/${id}`, "DELETE");
+  location.reload();
+}
+async function addAssignment() {
+  const title = document.getElementById("a-title").value.trim();
+  const deadline = document.getElementById("a-deadline").value;
+  if (!title || !deadline) return showToast("Укажи название и дедлайн");
+  await api("/api/assignments", "POST", {
+    title,
+    subject: document.getElementById("a-subject").value.trim(),
+    deadline,
+    link: document.getElementById("a-link").value.trim(),
+  });
+  location.reload();
+}
+async function deleteAssignment(id) {
+  await api(`/api/assignments/${id}`, "DELETE");
+  location.reload();
+}
+async function toggleAssignment(id, el) {
+  const done = !el.classList.contains("is-checked");
+  await api(`/api/assignments/${id}`, "PUT", { done: done ? 1 : 0 });
+  location.reload();
+}
+</script>
+{% endblock %}

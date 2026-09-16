@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Портфолио{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="eyebrow">Мои проекты</div>
+  <h1>Портфолио</h1>
+</div>
+
+<div class="project-grid" id="project-grid">
+  {% for pr in projects %}
+  <div class="project-card panel" data-id="{{ pr.id }}">
+    <h3>{{ pr.title }}</h3>
+    <div class="project-desc">{{ pr.description }}</div>
+    {% if pr.tags %}
+    <div class="project-tags">
+      {% for t in pr.tags.split(',') %}<span class="tag">{{ t.strip() }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      {% if pr.github_link %}
+      <a class="project-link" href="{{ pr.github_link }}" target="_blank" rel="noopener">github ↗</a>
+      {% else %}<span></span>{% endif %}
+      <button class="btn btn-ghost" onclick="deleteProject({{ pr.id }})">✕</button>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% if not projects %}
+<div class="panel empty-hint">Пока нет ни одного проекта — добавь первый ниже.</div>
+{% endif %}
+
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Мой GitHub-профиль</span></div>
+  <div class="field">
+    <label class="field-label">Ссылка на твой аккаунт (показывается на Главной странице)</label>
+    <input type="url" id="gh-profile" value="{{ settings.github_profile }}" style="width:100%;" placeholder="https://github.com/твой_ник">
+  </div>
+  <button class="btn btn-accent" onclick="saveGithubProfile()">Сохранить</button>
+</div>
+<div class="panel" style="margin-top:20px;">
+  <div class="section-title"><span>Новый проект</span></div>
+  <div class="field">
+    <label class="field-label">Название</label>
+    <input type="text" id="pr-title" style="width:100%;">
+  </div>
+  <div class="field">
+    <label class="field-label">Описание</label>
+    <textarea id="pr-desc" style="width:100%;"></textarea>
+  </div>
+  <div class="form-row">
+    <input type="url" id="pr-github" placeholder="Ссылка на GitHub" style="min-width:240px; flex:1;">
+    <input type="text" id="pr-tags" placeholder="Теги через запятую (python, flask)" style="min-width:240px; flex:1;">
+  </div>
+  <div class="form-row">
+    <button class="btn btn-accent" onclick="addProject()">Добавить проект</button>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function addProject() {
+  const title = document.getElementById("pr-title").value.trim();
+  if (!title) return showToast("Укажи название проекта");
+  await api("/api/portfolio", "POST", {
+    title,
+    description: document.getElementById("pr-desc").value.trim(),
+    github_link: document.getElementById("pr-github").value.trim(),
+    tags: document.getElementById("pr-tags").value.trim(),
+  });
+  location.reload();
+}
+async function deleteProject(id) {
+  await api(`/api/portfolio/${id}`, "DELETE");
+  location.reload();
+}
+async function saveGithubProfile() {
+  const url = document.getElementById("gh-profile").value.trim();
+  await api("/api/settings", "POST", { github_profile: url });
+  showToast("Сохранено");
+  setTimeout(() => location.reload(), 500);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Mamba{% endblock %} — комната</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+  :root { --accent: {{ settings.accent }}; }
+</style>
+</head>
+<body>
+
+<div class="bg-layer" id="bg-layer"
+     data-type="{{ settings.background_type }}"
+     data-value="{{ settings.background_value }}">
+  {% if settings.background_type == 'video' and settings.background_value %}
+  <video autoplay muted loop playsinline class="bg-media">
+    <source src="{{ settings.background_value }}">
+  </video>
+  {% elif settings.background_type in ('image', 'gif') and settings.background_value %}
+  <img class="bg-media" src="{{ settings.background_value }}" alt="">
+  {% endif %}
+  <div class="bg-tint"></div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">◆</span>
+      <span class="brand-name">{{ settings.user_name }}</span>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('page_index') }}" class="nav-item {{ 'is-active' if request.path == '/' }}">
+        <span>Главная</span>
+      </a>
+      <a href="{{ url_for('page_schedule') }}" class="nav-item {{ 'is-active' if request.path == '/schedule' }}">
+        <span>Расписание</span>
+      </a>
+      <a href="{{ url_for('page_planner') }}" class="nav-item {{ 'is-active' if request.path == '/planner' }}">
+        <span>План на день</span>
+      </a>
+      <a href="{{ url_for('page_portfolio') }}" class="nav-item {{ 'is-active' if request.path == '/portfolio' }}">
+        <span>Портфолио</span>
+      </a>
+      <a href="{{ url_for('page_social') }}" class="nav-item {{ 'is-active' if request.path == '/social' }}">
+        <span>Соцсети</span>
+      </a>
+
+    </nav>
+    <div class="sidebar-media" onclick="document.getElementById('input-sidebar-media').click()"
+         style="{{ ('background-image:url(' ~ settings.sidebar_media ~ ');') if settings.sidebar_media }}">
+      {% if not settings.sidebar_media %}<span class="media-cell-label">+ медиа</span>{% endif %}
+    </div>
+    <input type="file" id="input-sidebar-media" accept="image/*" style="display:none;" onchange="uploadHomeMedia(this.files[0], 'sidebar_media')">
+    <div class="quick-links">
+      <span class="quick-label">Быстрый вход</span>
+      <a href="{{ settings.lms_link }}" target="_blank" rel="noopener" class="quick-btn">LMS</a>
+      <a href="{{ settings.mydu_link }}" target="_blank" rel="noopener" class="quick-btn">My-DU</a>
+    </div>
+    <a href="{{ url_for('page_settings') }}" class="settings-link {{ 'is-active' if request.path == '/settings' }}">Настройки</a>
+  </aside>
+
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
